@@ -2,20 +2,22 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.11'
 }
 
-group 'com.dbeginc.clean-arch'
-version '1.0-SNAPSHOT'
+group Configurations.groupId
+version Configurations.cleanArchBaseVersion
 
-repositories {
-    mavenCentral()
+allprojects {
+    repositories {
+        mavenCentral()
+    }
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation(KotlinLibraries.stdlibJdk8)
 }
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+compileKotlin { 
+    kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
 }

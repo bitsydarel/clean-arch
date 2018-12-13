@@ -2,22 +2,18 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
-group 'com.dbeginc.clean-arch'
-version '1.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
+group Configurations.groupId
+version Configurations.cleanArchRxJavaVersion
 
 dependencies {
-    implementation(":base")
-    implementation("io.reactivex.rxjava2:rxjava:2.2.4")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation(project(":base"))
+    implementation(ThirdPartiesLibraries.rxJava2)
+    implementation(KotlinLibraries.stdlibJdk8)
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
 }
