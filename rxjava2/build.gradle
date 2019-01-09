@@ -1,17 +1,15 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm'
+    id("org.jetbrains.kotlin.jvm")
+    id("maven-publish")
+    id("signing")
+    id("com.github.johnrengelman.shadow") version("4.0.3")
 }
 
 group Configurations.groupId
 version Configurations.cleanArchRxJavaVersion
 
-repositories {
-    mavenLocal()
-}
-
 dependencies {
-//    implementation(project(":core"))
-    implementation("clean-arch:core:1.0-SNAPSHOT")
+    implementation("com.bitsydarel.clean-arch:core-jvm:0.1")
     implementation(ThirdPartiesLibraries.rxJava2)
     implementation(KotlinLibraries.stdlibJdk8)
 }
@@ -19,6 +17,83 @@ dependencies {
 compileKotlin {
     kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
 }
+
 compileTestKotlin {
     kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
+}
+
+task javadocsJar(type: Jar, dependsOn: dokka) {
+    archiveClassifier = 'javadoc'
+    from dokka.outputDirectory
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = Configurations.groupId
+            artifactId = project.name
+            version = Configurations.cleanArchRxJavaVersion
+            artifact javadocsJar
+
+            from components.java
+
+            pom.withXml {
+                def root = asNode()
+
+                // eliminate test-scoped dependencies (no need in maven central POMs)
+                root.dependencies.removeAll { dep ->
+                    dep.scope == "test"
+                }
+
+                // add all items necessary for maven central publication
+                root.children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+
+                    name Configurations.rxJavaLibraryName
+                    description = Configurations.rxJavaLibraryDescription
+                    url Configurations.cleanArchProjectUrl
+                    organization {
+                        name "com.bitsydarel"
+                        url Configurations.authorWebsite
+                    }
+                    issueManagement {
+                        system "GitHub"
+                        url Configurations.cleanArchProjectUrl + "/issues"
+                    }
+                    licenses {
+                        license {
+                            name Configurations.licenseName
+                            url Configurations.licenseUrl
+                            distribution "repo"
+                        }
+                    }
+                    scm {
+                        url Configurations.cleanArchProjectUrl
+                        connection Configurations.cleanArchProjectUrl
+                    }
+                    developers {
+                        developer {
+                            id Configurations.authorId
+                            name Configurations.authorName
+                            email Configurations.authorEmail
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = Configurations.remoteMavenRepo
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications)
+}
+
+afterEvaluate {
+    bintrayUpload.dependsOn publishToMavenLocal
 }

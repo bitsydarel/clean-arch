@@ -5,14 +5,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version("4.0.3")
 }
 
-group Configurations.groupId
-version Configurations.cleanArchCoreVersion
-
-// TODO work around for https://youtrack.jetbrains.com/issue/KT-27170
-configurations {
-    compileClasspath
-}
-
 kotlin {
     sourceSets {
         commonMain {
@@ -67,29 +59,34 @@ kotlin {
             }
 
             mavenPublication {
-                artifactId = 'core-jvm'
+                group = Configurations.groupId
+                version = Configurations.cleanArchCoreVersion
             }
         }
-        
+
         fromPreset(presets.js, 'js') {
             mavenPublication {
-                artifactId = 'core-js'
+                group = Configurations.groupId
+                version = Configurations.cleanArchCoreVersion
             }
         }
         // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
         fromPreset(presets.iosX64, 'iosX64') {
             mavenPublication {
-                artifactId = 'core-native'
+                group = Configurations.groupId
+                version = Configurations.cleanArchCoreVersion
             }
         }
         fromPreset(presets.iosArm64, 'iosArm64') {
             mavenPublication {
-                artifactId = 'core-native'
+                group = Configurations.groupId
+                version = Configurations.cleanArchCoreVersion
             }
         }
         fromPreset(presets.macosX64, 'macosX64') {
             mavenPublication {
-                artifactId = 'core-native'
+                group = Configurations.groupId
+                version = Configurations.cleanArchCoreVersion
             }
         }
 
@@ -108,10 +105,51 @@ kotlin {
     }
 }
 
+dokka {
+    impliedPlatforms = ["Common"] // This will force platform tags for all non-common sources e.g. "JVM"
+    kotlinTasks {
+        // dokka fails to retrieve sources from MPP-tasks so they must be set empty to avoid exception
+        // use sourceRoot instead (see below)
+        []
+    }
+    sourceRoot {
+        // assuming there is only a single source dir...
+        path = kotlin.sourceSets.commonMain.kotlin.srcDirs[0]
+        platforms = ["common"]
+    }
+    if (kotlin.sourceSets.getNames().contains("jvmMain")) {
+        sourceRoot {
+            // assuming there is only a single source dir...
+            path = kotlin.sourceSets.jvmMain.kotlin.srcDirs[0]
+            platforms = ["jvm"]
+        }
+    }
+    if (kotlin.sourceSets.getNames().contains("jsMain")) {
+        sourceRoot {
+            // assuming there is only a single source dir...
+            path = kotlin.sourceSets.jsMain.kotlin.srcDirs[0]
+            platforms = ["js"]
+        }
+    }
+    if (kotlin.sourceSets.getNames().contains("nativeMain")) {
+        sourceRoot {
+            // assuming there is only a single source dir...
+            path = kotlin.sourceSets.nativeMain.kotlin.srcDirs[0]
+            platforms = ["native"]
+        }
+    }
+}
+
+task javadocsJar(type: Jar, dependsOn: dokka) {
+    archiveClassifier = 'javadoc'
+    from dokka.outputDirectory
+}
+
 publishing {
     publications.all {
-        group Configurations.groupId
         version = Configurations.cleanArchCoreVersion
+        artifact javadocsJar
+
         pom.withXml {
             def root = asNode()
 
@@ -166,4 +204,8 @@ publishing {
 
 signing {
     sign(publishing.publications)
+}
+
+afterEvaluate {
+    bintrayUpload.dependsOn publishToMavenLocal
 }

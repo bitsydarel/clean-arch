@@ -9,7 +9,7 @@ interface ThreadManagerProvider<out T> {
     /**
      * A elastic Thread Manager.
      *
-     * @return Thread Manager of type [T] that grow as needed, usually used for graphic intensive task.
+     * @return Thread Manager of type [T] that grow as needed, usually used for resource intensive task.
      * @see io if the task is not really that intensive.
      */
     fun elastic(): T
@@ -18,7 +18,7 @@ interface ThreadManagerProvider<out T> {
      * A IO (input/output) Thread Manager.
      *
      * @return Thread Manager of type [T] that can be used for network call, database call and most of the other use cases.
-     * @see elastic if the task is really intensive and a lot of resources is available.
+     * @see elastic if the task is really intensive and a lot of resources is required.
      */
     fun io(): T
 

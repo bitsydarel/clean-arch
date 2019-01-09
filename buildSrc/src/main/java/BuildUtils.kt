@@ -1,3 +1,5 @@
+@file:JvmName("BuildUtils")
+
 import org.gradle.api.Project
 import java.util.*
 

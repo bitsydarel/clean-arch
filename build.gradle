@@ -11,6 +11,7 @@ buildscript {
 
 plugins {
     id("com.jfrog.bintray") version("1.8.4") apply(false)
+    id("org.jetbrains.dokka") version("0.9.17") apply(false)
 }
 
 group Configurations.groupId
@@ -18,14 +19,21 @@ version Configurations.cleanArchCoreVersion
 
 allprojects { project ->
     apply plugin: "com.jfrog.bintray"
+    apply plugin: "org.jetbrains.dokka"
 
-    final localProperties = BuildUtilsKt.getLocalProperties(project)
-
+    final localProperties = BuildUtils.getLocalProperties(project)
+    
+    project.group = Configurations.groupId
+    
     bintray {
         user = localProperties.getProperty("BINTRAY_USER")
         key = localProperties.getProperty("BINTRAY_API_KEY")
+        apiUrl = "https://api.bintray.com"
+        override = true // for multi-platform Kotlin/Native publishing
+        dryRun = System.getProperty("BINTRAY_DRY_RUN") ?: false
+        publish = true
         pkg {
-            repo = Configurations.remoteMavenRepo
+            repo = "maven"
             name = "clean-arch"
             userOrg = localProperties.getProperty("BINTRAY_USER")
             licenses = ['Apache-2.0']
@@ -33,13 +41,30 @@ allprojects { project ->
             issueTrackerUrl = Configurations.cleanArchProjectUrl + "/issues"
             githubRepo = 'bitsydarel/clean-arch'
             setLabels("kotlin")
+
+            afterEvaluate {
+                version {
+                    name = project.name.contains("core") ? Configurations.cleanArchCoreVersion : Configurations.cleanArchRxJavaVersion
+                    released  = new Date()
+                }
+            }
         }
     }
-
+    
     bintrayUpload.doFirst {
         publications = project.publishing.publications
+                .findAll { !it.name.contains('-test') }
+                .collect { 
+                    println("Uploading artifact '$it.groupId:$it.artifactId:$it.version' from publication '$it.name'")
+                    it.name  // WORKAROUND for https://github.com/bintray/gradle-bintray-plugin/issues/256
+                }
     }
-    
+
+    // TODO work around for https://youtrack.jetbrains.com/issue/KT-27170
+    configurations {
+        compileClasspath
+    }
+
     repositories {
         mavenCentral()
         maven { url Configurations.remoteMavenRepo }
