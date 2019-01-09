@@ -1,0 +1,169 @@
+plugins {
+    id("kotlin-multiplatform")
+    id("maven-publish")
+    id("signing")
+    id("com.github.johnrengelman.shadow") version("4.0.3")
+}
+
+group Configurations.groupId
+version Configurations.cleanArchCoreVersion
+
+// TODO work around for https://youtrack.jetbrains.com/issue/KT-27170
+configurations {
+    compileClasspath
+}
+
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation KotlinLibraries.stdlibCommon
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation KotlinLibraries.testCommon
+                implementation KotlinLibraries.testAnnotationCommon
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation KotlinLibraries.stdlibJdk8
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation KotlinLibraries.testJvm
+                implementation KotlinLibraries.testJunitJvm
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation KotlinLibraries.stdlibJs
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation KotlinLibraries.testJs
+            }
+        }
+        nativeMain {
+        }
+
+        all {
+            languageSettings {
+                progressiveMode = true
+            }
+        }
+    }
+
+    targets {
+        fromPreset(presets.jvm, 'jvm') {
+            // Configure a single target's compilations (main and test)
+            compilations.all {
+                tasks[compileKotlinTaskName].kotlinOptions {
+                    jvmTarget = '1.8'
+                }
+            }
+
+            mavenPublication {
+                artifactId = 'core-jvm'
+            }
+        }
+        
+        fromPreset(presets.js, 'js') {
+            mavenPublication {
+                artifactId = 'core-js'
+            }
+        }
+        // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
+        fromPreset(presets.iosX64, 'iosX64') {
+            mavenPublication {
+                artifactId = 'core-native'
+            }
+        }
+        fromPreset(presets.iosArm64, 'iosArm64') {
+            mavenPublication {
+                artifactId = 'core-native'
+            }
+        }
+        fromPreset(presets.macosX64, 'macosX64') {
+            mavenPublication {
+                artifactId = 'core-native'
+            }
+        }
+
+        // Configure all compilations of all targets:
+//        all {
+//            compilations.all {
+//                tasks[compileKotlinTaskName].kotlinOptions {
+//                    allWarningsAsErrors = true
+//                }
+//            }
+//        }
+    }
+
+    configure([targets.iosX64, targets.iosArm64, targets.macosX64]) {
+        compilations.main.source(sourceSets.nativeMain)
+    }
+}
+
+publishing {
+    publications.all {
+        group Configurations.groupId
+        version = Configurations.cleanArchCoreVersion
+        pom.withXml {
+            def root = asNode()
+
+            // eliminate test-scoped dependencies (no need in maven central POMs)
+            root.dependencies.removeAll { dep ->
+                dep.scope == "test"
+            }
+
+            // add all items necessary for maven central publication
+            root.children().last() + {
+                resolveStrategy = Closure.DELEGATE_FIRST
+
+                name Configurations.coreLibraryName
+                description = Configurations.coreLibraryDescription
+                url Configurations.cleanArchProjectUrl
+                organization {
+                    name "com.bitsydarel"
+                    url Configurations.authorWebsite
+                }
+                issueManagement {
+                    system "GitHub"
+                    url Configurations.cleanArchProjectUrl + "/issues"
+                }
+                licenses {
+                    license {
+                        name Configurations.licenseName
+                        url Configurations.licenseUrl
+                        distribution "repo"
+                    }
+                }
+                scm {
+                    url Configurations.cleanArchProjectUrl
+                    connection Configurations.cleanArchProjectUrl
+                }
+                developers {
+                    developer {
+                        id Configurations.authorId
+                        name Configurations.authorName
+                        email Configurations.authorEmail
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = Configurations.remoteMavenRepo
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications)
+}

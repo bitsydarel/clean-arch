@@ -1,6 +1,6 @@
-package com.dbeginc.cleanarch.rxjava.usecases
+package com.bitsydarel.cleanarch.rxjava.usecases
 
-import com.dbeginc.cleanarch.base.usecases.UseCase
+import com.bitsydarel.cleanarch.core.usecases.UseCase
 import io.reactivex.CompletableSource
 
 abstract class CompletableUseCase<out R : CompletableSource> : UseCase<R>()

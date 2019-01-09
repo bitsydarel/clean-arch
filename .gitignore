@@ -191,3 +191,4 @@ fastlane/screenshots
 fastlane/test_output
 fastlane/readme.md
 
+/clean_arch_lib_cert.gpg

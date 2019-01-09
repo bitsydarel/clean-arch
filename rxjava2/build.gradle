@@ -5,8 +5,13 @@ plugins {
 group Configurations.groupId
 version Configurations.cleanArchRxJavaVersion
 
+repositories {
+    mavenLocal()
+}
+
 dependencies {
-    implementation(project(":base"))
+//    implementation(project(":core"))
+    implementation("clean-arch:core:1.0-SNAPSHOT")
     implementation(ThirdPartiesLibraries.rxJava2)
     implementation(KotlinLibraries.stdlibJdk8)
 }

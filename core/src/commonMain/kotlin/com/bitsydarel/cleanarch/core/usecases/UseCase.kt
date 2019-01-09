@@ -1,4 +1,4 @@
-package com.dbeginc.cleanarch.base.usecases
+package com.bitsydarel.cleanarch.core.usecases
 
 abstract class UseCase<out R> {
     protected abstract fun buildUseCase() : R

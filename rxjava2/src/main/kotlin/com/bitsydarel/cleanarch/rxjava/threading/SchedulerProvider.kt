@@ -1,6 +1,6 @@
-package com.dbeginc.cleanarch.rxjava.threading
+package com.bitsydarel.cleanarch.rxjava.threading
 
-import com.dbeginc.cleanarch.base.threading.ThreadManagerProvider
+import com.bitsydarel.cleanarch.core.threading.ThreadManagerProvider
 import io.reactivex.Scheduler
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.Executor

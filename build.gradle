@@ -1,23 +1,58 @@
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.11'
-}
-
-group Configurations.groupId
-version Configurations.cleanArchBaseVersion
-
-allprojects {
+buildscript {
     repositories {
+        gradlePluginPortal()
         mavenCentral()
+    }
+
+    dependencies {
+        classpath KotlinLibraries.gradlePlugin
     }
 }
 
-dependencies {
-    implementation(KotlinLibraries.stdlibJdk8)
+plugins {
+    id("com.jfrog.bintray") version("1.8.4") apply(false)
 }
 
-compileKotlin { 
-    kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = Configurations.jvmDefaultVersion
+group Configurations.groupId
+version Configurations.cleanArchCoreVersion
+
+allprojects { project ->
+    apply plugin: "com.jfrog.bintray"
+
+    final localProperties = BuildUtilsKt.getLocalProperties(project)
+
+    bintray {
+        user = localProperties.getProperty("BINTRAY_USER")
+        key = localProperties.getProperty("BINTRAY_API_KEY")
+        pkg {
+            repo = Configurations.remoteMavenRepo
+            name = "clean-arch"
+            userOrg = localProperties.getProperty("BINTRAY_USER")
+            licenses = ['Apache-2.0']
+            vcsUrl = Configurations.cleanArchProjectScmUrl
+            issueTrackerUrl = Configurations.cleanArchProjectUrl + "/issues"
+            githubRepo = 'bitsydarel/clean-arch'
+            setLabels("kotlin")
+        }
+    }
+
+    bintrayUpload.doFirst {
+        publications = project.publishing.publications
+    }
+    
+    repositories {
+        mavenCentral()
+        maven { url Configurations.remoteMavenRepo }
+        gradlePluginPortal()
+    }
+
+    gradle.taskGraph.whenReady { taskGraph ->
+        if (taskGraph.allTasks.any { it instanceof Sign }) {
+            allprojects {
+                ext."signing.keyId" = localProperties.getProperty("signing.keyId")
+                ext."signing.secretKeyRingFile" = localProperties.getProperty("signing.secretKeyRingFile")
+                ext."signing.password" = localProperties.getProperty("signing.password")
+            }
+        }
+    }
 }

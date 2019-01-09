@@ -1,4 +1,4 @@
-package com.dbeginc.cleanarch.base.threading
+package com.bitsydarel.cleanarch.core.threading
 
 /**
  * Created by darel at 13.12.18.
