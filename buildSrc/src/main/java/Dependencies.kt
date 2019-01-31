@@ -2,6 +2,7 @@ import Configurations.kotlinLanguageVersion
 
 object KotlinLibraries {
     const val gradlePlugin: String = "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinLanguageVersion"
+    const val nativePlguin: String = "org.jetbrains.kotlin:kotlin-native-gradle-plugin:$kotlinLanguageVersion"
     /*************************** Kotlin common libraries **************************************/
     const val stdlibCommon: String = "org.jetbrains.kotlin:kotlin-stdlib-common"
     const val testCommon: String = "org.jetbrains.kotlin:kotlin-test-common"

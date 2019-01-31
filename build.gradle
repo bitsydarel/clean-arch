@@ -2,10 +2,12 @@ buildscript {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        maven { url 'https://dl.bintray.com/jetbrains/kotlin-native-dependencies' }
     }
 
     dependencies {
         classpath KotlinLibraries.gradlePlugin
+        classpath KotlinLibraries.nativePlguin
     }
 }
 
@@ -67,8 +69,10 @@ allprojects { project ->
 
     repositories {
         mavenCentral()
-        maven { url Configurations.remoteMavenRepo }
+        jcenter()
         gradlePluginPortal()
+        maven { url Configurations.remoteMavenRepo }
+        maven { url 'https://dl.bintray.com/jetbrains/kotlin-native-dependencies' }
     }
 
     gradle.taskGraph.whenReady { taskGraph ->

@@ -1,0 +1,103 @@
+plugins {
+    id 'kotlin-multiplatform'
+    id("maven-publish")
+    id("signing")
+    id("com.github.johnrengelman.shadow") version("4.0.3")
+}
+
+group Configurations.groupId
+version Configurations.cleanArchCoroutinesVersion
+
+kotlin {
+    jvm() {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
+        }
+    }
+    js()
+    // For ARM, should be changed to iosArm32 or iosArm64
+    // For Linux, should be changed to e.g. linuxX64
+    // For MacOS, should be changed to e.g. macosX64
+    // For Windows, should be changed to e.g. mingwX64
+    final def macosTarget = macosX64()
+    final def iosDeviceTarget = iosArm64() {
+        binaries {
+            framework {
+            }
+        }
+    }
+    
+    final def iosEmulatorTarget = iosX64() {
+        binaries {
+            framework {
+                // Disable bitcode embedding for the simulator build.
+                embedBitcode("disable")
+            }
+        }
+    }
+
+    final String cleanArchVersion = "0.2"
+    final String coroutinesVersion = "1.1.1"
+    
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin('stdlib-common')
+                api("com.bitsydarel.clean-arch:core:$cleanArchVersion")
+                api("com.bitsydarel.clean-arch:core-metadata:$cleanArchVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation kotlin('stdlib-jdk8')
+                api("com.bitsydarel.clean-arch:core-jvm:$cleanArchVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+                api("com.bitsydarel.clean-arch:core-js:$cleanArchVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+            }
+        }
+        nativeMain {
+        }
+        all {
+            languageSettings {
+                progressiveMode = true
+            }
+        }
+    }
+
+    configure([macosTarget, iosDeviceTarget, iosEmulatorTarget]) {
+        compilations.main.source(sourceSets.nativeMain)
+        compilations.main.defaultSourceSet {
+            dependsOn sourceSets.commonMain
+            dependencies {
+                api("com.bitsydarel.clean-arch:core-$name:$cleanArchVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
+            }
+        }
+    }
+}
