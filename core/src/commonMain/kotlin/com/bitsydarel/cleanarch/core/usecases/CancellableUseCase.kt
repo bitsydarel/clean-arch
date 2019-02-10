@@ -11,5 +11,5 @@ abstract class CancellableUseCase<out R> : UseCase<R>() {
      *
      * Calling this method does not guarantee that the use case has been cancelled.
      */
-    abstract fun cancel()
+    abstract fun cancel(cause: Throwable?)
 }

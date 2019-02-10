@@ -16,20 +16,22 @@ kotlin {
             }
         }
     }
+
     js()
     // For ARM, should be changed to iosArm32 or iosArm64
     // For Linux, should be changed to e.g. linuxX64
     // For MacOS, should be changed to e.g. macosX64
     // For Windows, should be changed to e.g. mingwX64
-    final def macosTarget = macosX64()
-    final def iosDeviceTarget = iosArm64() {
+    macosX64()
+
+    iosArm64() {
         binaries {
             framework {
             }
         }
     }
-    
-    final def iosEmulatorTarget = iosX64() {
+
+    iosX64() {
         binaries {
             framework {
                 // Disable bitcode embedding for the simulator build.
@@ -38,15 +40,15 @@ kotlin {
         }
     }
 
-    final String cleanArchVersion = "0.2"
+    final String cleanArchVersion = "0.3"
     final String coroutinesVersion = "1.1.1"
-    
+
     sourceSets {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
+                implementation("com.bitsydarel.clean-arch:core-metadata:$cleanArchVersion")
                 api("com.bitsydarel.clean-arch:core:$cleanArchVersion")
-                api("com.bitsydarel.clean-arch:core-metadata:$cleanArchVersion")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
             }
         }
@@ -82,6 +84,28 @@ kotlin {
             }
         }
         nativeMain {
+            dependsOn sourceSets.commonMain
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
+            }
+        }
+        macosX64Main {
+            dependsOn sourceSets.nativeMain
+            dependencies {
+                api("com.bitsydarel.clean-arch:core-macosx64:$cleanArchVersion")
+            }
+        }
+        iosArm64Main {
+            dependsOn sourceSets.nativeMain
+            dependencies {
+                api("com.bitsydarel.clean-arch:core-iosarm64:$cleanArchVersion")
+            }
+        }
+        iosX64Main {
+            dependsOn sourceSets.nativeMain
+            dependencies {
+                api("com.bitsydarel.clean-arch:core-iosx64:$cleanArchVersion")
+            }
         }
         all {
             languageSettings {
@@ -89,15 +113,115 @@ kotlin {
             }
         }
     }
+}
 
-    configure([macosTarget, iosDeviceTarget, iosEmulatorTarget]) {
-        compilations.main.source(sourceSets.nativeMain)
-        compilations.main.defaultSourceSet {
-            dependsOn sourceSets.commonMain
-            dependencies {
-                api("com.bitsydarel.clean-arch:core-$name:$cleanArchVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
-            }
+dokka {
+    impliedPlatforms = ["Common"] // This will force platform tags for all non-common sources e.g. "JVM"
+    kotlinTasks {
+        // dokka fails to retrieve sources from MPP-tasks so they must be set empty to avoid exception
+        // use sourceRoot instead (see below)
+        []
+    }
+    sourceRoot {
+        // assuming there is only a single source dir...
+        path = kotlin.sourceSets.commonMain.kotlin.srcDirs[0]
+        platforms = ["common"]
+    }
+    if (kotlin.sourceSets.getNames().contains("jvmMain")) {
+        sourceRoot {
+            // assuming there is only a single source dir...
+            path = kotlin.sourceSets.jvmMain.kotlin.srcDirs[0]
+            platforms = ["jvm"]
         }
     }
+    if (kotlin.sourceSets.getNames().contains("jsMain")) {
+        sourceRoot {
+            // assuming there is only a single source dir...
+            path = kotlin.sourceSets.jsMain.kotlin.srcDirs[0]
+            platforms = ["js"]
+        }
+    }
+    if (kotlin.sourceSets.getNames().contains("nativeMain")) {
+        sourceRoot {
+            // assuming there is only a single source dir...
+            path = kotlin.sourceSets.nativeMain.kotlin.srcDirs[0]
+            platforms = ["native"]
+        }
+    }
+}
+
+task javadocsJar(type: Jar, dependsOn: dokka) {
+    archiveClassifier = 'javadoc'
+    from dokka.outputDirectory
+}
+
+publishing {
+    publications.all {
+        version = Configurations.cleanArchCoroutinesVersion
+        artifact javadocsJar
+
+        pom.withXml {
+            def root = asNode()
+
+            // eliminate test-scoped dependencies (no need in maven central POMs)
+            root.dependencies.removeAll { dep ->
+                dep.scope == "test"
+            }
+
+            // add all items necessary for maven central publication
+            root.children().last() + {
+                resolveStrategy = Closure.DELEGATE_FIRST
+
+                name Configurations.coroutineLibraryName
+                description = Configurations.coroutineLibraryDescription
+                url Configurations.cleanArchProjectUrl
+                organization {
+                    name "com.bitsydarel"
+                    url Configurations.authorWebsite
+                }
+                issueManagement {
+                    system "GitHub"
+                    url Configurations.cleanArchProjectUrl + "/issues"
+                }
+                licenses {
+                    license {
+                        name Configurations.licenseName
+                        url Configurations.licenseUrl
+                        distribution "repo"
+                    }
+                }
+                scm {
+                    url Configurations.cleanArchProjectUrl
+                    connection Configurations.cleanArchProjectUrl
+                }
+                developers {
+                    developer {
+                        id Configurations.authorId
+                        name Configurations.authorName
+                        email Configurations.authorEmail
+                    }
+                }
+            }
+        }
+
+        final String nameOfTheArtifact = getArtifactId()
+
+        if (nameOfTheArtifact.contains("jvm") || nameOfTheArtifact.contains("js")) {
+            moduleDescriptorGenerator = null
+        }
+    }
+
+    repositories {
+        maven {
+            url = Configurations.remoteMavenRepo
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications)
+}
+
+afterEvaluate {
+    bintrayUpload.dependsOn publishToMavenLocal
 }

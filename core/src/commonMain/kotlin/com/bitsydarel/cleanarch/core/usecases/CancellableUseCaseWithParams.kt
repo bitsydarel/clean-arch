@@ -13,5 +13,5 @@ abstract class CancellableUseCaseWithParams<in Params, out R> : UseCaseWithParam
      *
      * Calling this method does not guarantee that the use case has been cancelled.
      */
-    abstract fun cancel()
+    abstract fun cancel(cause: Throwable?)
 }

@@ -6,6 +6,62 @@ plugins {
 }
 
 kotlin {
+    jvm() {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
+        }
+
+        mavenPublication {
+            group = Configurations.groupId
+            version = Configurations.cleanArchCoreVersion
+        }
+    }
+
+    js() {
+        mavenPublication {
+            group = Configurations.groupId
+            version = Configurations.cleanArchCoreVersion
+        }
+    }
+    // For ARM, should be changed to iosArm32 or iosArm64
+    // For Linux, should be changed to e.g. linuxX64
+    // For MacOS, should be changed to e.g. macosX64
+    // For Windows, should be changed to e.g. mingwX64
+    macosX64() {
+        mavenPublication {
+            group = Configurations.groupId
+            version = Configurations.cleanArchCoreVersion
+        }
+    }
+
+    iosArm64() {
+        mavenPublication {
+            group = Configurations.groupId
+            version = Configurations.cleanArchCoreVersion
+        }
+        
+        binaries {
+            framework {
+            }
+        }
+    }
+
+    iosX64() {
+        mavenPublication {
+            group = Configurations.groupId
+            version = Configurations.cleanArchCoreVersion
+        }
+        
+        binaries {
+            framework {
+                // Disable bitcode embedding for the simulator build.
+                embedBitcode("disable")
+            }
+        }
+    }
+
     sourceSets {
         commonMain {
             dependencies {
@@ -40,8 +96,17 @@ kotlin {
             }
         }
         nativeMain {
+            dependsOn sourceSets.commonMain
         }
-
+        macosX64Main {
+            dependsOn sourceSets.nativeMain
+        }
+        iosArm64Main {
+            dependsOn sourceSets.nativeMain
+        }
+        iosX64Main {
+            dependsOn sourceSets.nativeMain
+        }
         all {
             languageSettings {
                 progressiveMode = true
@@ -49,60 +114,60 @@ kotlin {
         }
     }
 
-    targets {
-        fromPreset(presets.jvm, 'jvm') {
-            // Configure a single target's compilations (main and test)
-            compilations.all {
-                tasks[compileKotlinTaskName].kotlinOptions {
-                    jvmTarget = '1.8'
-                }
-            }
-
-            mavenPublication {
-                group = Configurations.groupId
-                version = Configurations.cleanArchCoreVersion
-            }
-        }
-
-        fromPreset(presets.js, 'js') {
-            mavenPublication {
-                group = Configurations.groupId
-                version = Configurations.cleanArchCoreVersion
-            }
-        }
-        // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
-        fromPreset(presets.iosX64, 'iosX64') {
-            mavenPublication {
-                group = Configurations.groupId
-                version = Configurations.cleanArchCoreVersion
-            }
-        }
-        fromPreset(presets.iosArm64, 'iosArm64') {
-            mavenPublication {
-                group = Configurations.groupId
-                version = Configurations.cleanArchCoreVersion
-            }
-        }
-        fromPreset(presets.macosX64, 'macosX64') {
-            mavenPublication {
-                group = Configurations.groupId
-                version = Configurations.cleanArchCoreVersion
-            }
-        }
-
-        // Configure all compilations of all targets:
-//        all {
+//    targets {
+//        fromPreset(presets.jvm, 'jvm') {
+//            // Configure a single target's compilations (main and test)
 //            compilations.all {
 //                tasks[compileKotlinTaskName].kotlinOptions {
-//                    allWarningsAsErrors = true
+//                    jvmTarget = '1.8'
 //                }
 //            }
+//
+//            mavenPublication {
+//                group = Configurations.groupId
+//                version = Configurations.cleanArchCoreVersion
+//            }
 //        }
-    }
-
-    configure([targets.iosX64, targets.iosArm64, targets.macosX64]) {
-        compilations.main.source(sourceSets.nativeMain)
-    }
+//
+//        fromPreset(presets.js, 'js') {
+//            mavenPublication {
+//                group = Configurations.groupId
+//                version = Configurations.cleanArchCoreVersion
+//            }
+//        }
+//        // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
+//        fromPreset(presets.iosX64, 'iosX64') {
+//            mavenPublication {
+//                group = Configurations.groupId
+//                version = Configurations.cleanArchCoreVersion
+//            }
+//        }
+//        fromPreset(presets.iosArm64, 'iosArm64') {
+//            mavenPublication {
+//                group = Configurations.groupId
+//                version = Configurations.cleanArchCoreVersion
+//            }
+//        }
+//        fromPreset(presets.macosX64, 'macosX64') {
+//            mavenPublication {
+//                group = Configurations.groupId
+//                version = Configurations.cleanArchCoreVersion
+//            }
+//        }
+//
+//        // Configure all compilations of all targets:
+////        all {
+////            compilations.all {
+////                tasks[compileKotlinTaskName].kotlinOptions {
+////                    allWarningsAsErrors = true
+////                }
+////            }
+////        }
+//    }
+//
+//    configure([targets.iosX64, targets.iosArm64, targets.macosX64]) {
+//        compilations.main.source(sourceSets.nativeMain)
+//    }
 }
 
 dokka {
@@ -192,6 +257,12 @@ publishing {
                     }
                 }
             }
+        }
+
+        final String nameOfTheArtifact = getArtifactId()
+
+        if (nameOfTheArtifact.contains("jvm") || nameOfTheArtifact.contains("js")) {
+            moduleDescriptorGenerator = null
         }
     }
 
