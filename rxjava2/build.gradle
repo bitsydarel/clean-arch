@@ -9,7 +9,7 @@ group Configurations.groupId
 version Configurations.cleanArchRxJavaVersion
 
 dependencies {
-    api("com.bitsydarel.clean-arch:core-jvm:0.2")
+    api("com.bitsydarel.clean-arch:core-jvm:0.3")
     api(ThirdPartiesLibraries.rxJava2)
     implementation(KotlinLibraries.stdlibJdk8)
 }
