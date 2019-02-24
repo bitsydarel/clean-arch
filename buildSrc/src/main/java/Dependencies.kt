@@ -19,5 +19,5 @@ object KotlinLibraries {
 }
 
 object ThirdPartiesLibraries {
-    const val rxJava2: String = "io.reactivex.rxjava2:rxjava:2.2.6"
+    const val rxJava2: String = "io.reactivex.rxjava2:rxjava:2.2.7"
 }

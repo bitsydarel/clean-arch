@@ -5,7 +5,7 @@
 ### disabled metadata for non-native targets
 ### changed signature of cancel method for cancellableUseCases to accept an error or null if not triggered by an exception.
 
-#Clean architecture RxJava2 support v0.2
+#Clean architecture RxJava2 support v0.3
 
 ## RxJava use cases:
 ###CompletableUseCase
@@ -17,6 +17,6 @@
 ###SingleUseCase
 ###SingleUseCaseWithParams
 
-#Clean architecture Coroutine support v0.1
+#Clean architecture Coroutine support v0.3
 
 ##Added support for jvm, javascript, ios, macOs
